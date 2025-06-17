@@ -3,7 +3,9 @@ import random
 import time
 import pygame
 from button import Button
+from dropdown import Dropdown
 pygame.init()
+
 
 WIDTH, HEIGHT = 800, 600
 
@@ -53,7 +55,7 @@ class Target:
         return dis <= self.size
 
 def draw(win, targets):
-    win.fill(BG_COLOR)
+    pygame.draw.rect(win, BG_COLOR, (0, TOP_BAR_HEIGHT, WIDTH, HEIGHT - TOP_BAR_HEIGHT))
 
     for target in targets:
         target.draw(win)
@@ -103,16 +105,86 @@ def end_screen(win, elapsed_time, targets_pressed, clicks):
     win.blit(hits_label, (get_middle(hits_label), 300))
     win.blit(accuracy_label, (get_middle(accuracy_label), 400))
 
+    restart_button = Button(WIDTH//2 - 175, 500, 150, 50, "Restart", LABEL_FONT, "green", "lightgreen")
+    menu_button = Button(WIDTH//2 + 25, 500, 200, 50, "Back to Main Menu", LABEL_FONT, "blue", "lightblue")
+
+    restart_button.draw(win)
+    menu_button.draw(win)
+
     pygame.display.update()
 
     run = True
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
-                quit()
+                pygame.quit()
+                exit()
+            if restart_button.is_clicked(event):
+                return "restart"
+            if menu_button.is_clicked(event):
+                return "menu"
 
 def get_middle(surface):
     return WIDTH / 2 - surface.get_width()/2
+
+def main_menu(win):
+    win.fill(BG_COLOR)
+    title = LABEL_FONT.render("Aim Trainer Main Menu", 1, "white")
+    win.blit(title, (get_middle(title), 100))
+
+    play_button = Button(WIDTH//2 - 100, 300, 200, 50, "Play", LABEL_FONT, "blue", "lightblue")
+    options_button = Button(WIDTH//2 - 100, 350, 200, 50, "Options", LABEL_FONT, "orange", "lightyellow")
+    pygame.display.update()
+
+    run = True
+    while run:
+        play_button.draw(win)
+        options_button.draw(win)
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if play_button.is_clicked(event):
+                run = False
+            if options_button.is_clicked(event):
+                options_menu(win)
+                win.fill(BG_COLOR)  # Clear screen when returning
+                title = LABEL_FONT.render("Aim Trainer Main Menu", 1, "white")
+                win.blit(title, (get_middle(title), 100))
+
+def options_menu(win):
+    run = True
+    rainbow_colors = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"]
+    
+    dropdown = Dropdown(WIDTH//2 - 100, 100, 200, 40, LABEL_FONT, rainbow_colors, "lightgray", "darkgray")
+    back_button = Button(WIDTH//2 - 100, 500, 200, 50, "Back", LABEL_FONT, "blue", "lightblue")
+
+
+    while run:
+        win.fill(BG_COLOR)
+        title = LABEL_FONT.render("Options Menu", 1, "white")
+        win.blit(title, (get_middle(title), 100))
+
+        dropdown.draw(win)
+        back_button.draw(win)
+
+        Target.COLOR = dropdown.selected
+
+
+        selected_color = dropdown.selected
+        selected_label = LABEL_FONT.render(f"Selected Color: {selected_color}", 1, "white")
+        win.blit(selected_label, (get_middle(selected_label), 300))
+
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            dropdown.handle_event(event)
+            if not dropdown.expanded and back_button.is_clicked(event):
+                run = False
 
 def main():
     run = True
@@ -134,8 +206,8 @@ def main():
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
-                break
+                pygame.quit()
+                return
 
             if event.type == TARGET_EVENT:
                 x = random.randint(TARGET_PADDING, WIDTH - TARGET_PADDING)
@@ -160,13 +232,20 @@ def main():
                 target_pressed += 1
 
         if misses >= LIVES:
-            end_screen(WIN, elapsed_time, target_pressed, clicks)
+            return end_screen(WIN, elapsed_time, target_pressed, clicks)
+            
 
         draw(WIN, targets)
         draw_top_bar(WIN, elapsed_time, target_pressed, misses)
         pygame.display.update()
-    
-    pygame.quit()
 
-if __name__ == "__main__":
-    main()
+while True:
+        main_menu(WIN)
+        result = main()
+
+        if result == "menu":
+            continue 
+        elif result == "restart":
+            result = main()
+            while result == "restart":
+                result = main()
