@@ -5,6 +5,12 @@ import pygame
 from button import Button
 from dropdown import Dropdown
 pygame.init()
+music_on = True
+pygame.mixer.music.load("Fish.mp3")
+pygame.mixer.music.set_volume(.05)
+if music_on:
+    pygame.mixer.music.play(-1)
+
 
 
 WIDTH, HEIGHT = 800, 600
@@ -154,11 +160,13 @@ def main_menu(win):
                 win.blit(title, (get_middle(title), 100))
 
 def options_menu(win):
+    music_on = True
     run = True
     rainbow_colors = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"]
     
     dropdown = Dropdown(WIDTH//2 - 100, 100, 200, 40, LABEL_FONT, rainbow_colors, "lightgray", "darkgray")
     back_button = Button(WIDTH//2 - 100, 500, 200, 50, "Back", LABEL_FONT, "blue", "lightblue")
+    music_button = Button(5, 5, 120, 30, "Music: On", LABEL_FONT, "gray", "lightgray")
 
 
     while run:
@@ -168,13 +176,17 @@ def options_menu(win):
 
         dropdown.draw(win)
         back_button.draw(win)
+        music_button.draw(win)
 
         Target.COLOR = dropdown.selected
 
 
         selected_color = dropdown.selected
         selected_label = LABEL_FONT.render(f"Selected Color: {selected_color}", 1, "white")
-        win.blit(selected_label, (get_middle(selected_label), 300))
+        win.blit(selected_label, (get_middle(selected_label), 50))
+
+        music_button.text = "Music: On" if music_on else "Music: Off"
+        music_button.draw(WIN)
 
         pygame.display.update()
 
@@ -182,6 +194,14 @@ def options_menu(win):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
+            
+            if music_button.is_clicked(event):
+                music_on = not music_on
+                if music_on:
+                    pygame.mixer.music.unpause()
+                else:
+                    pygame.mixer.music.pause()
+            
             dropdown.handle_event(event)
             if not dropdown.expanded and back_button.is_clicked(event):
                 run = False
